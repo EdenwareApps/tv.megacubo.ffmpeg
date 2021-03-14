@@ -1,0 +1,3 @@
+dependencies {
+    implementation 'com.arthenica:mobile-ffmpeg-https-gpl:4.4'
+}

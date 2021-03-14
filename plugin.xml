@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        id="tv.megacubo.ffmpeg"
+        version="1.1.0">
+
+  <name>FFMpeg</name>
+
+  <engines>
+    <engine name="cordova" version=">=3.4.0"/>
+  </engines>
+
+  <asset src="www/ffmpeg.js" target="js/ffmpeg.js"/>
+
+  <js-module src="www/ffmpeg.js" name="ffmpeg">
+    <clobbers target="ffmpeg" />
+  </js-module>
+
+  <platform name="android">
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="FFMpeg">
+        <param name="android-package" value="tv.megacubo.ffmpeg.FFMpeg"/>
+      </feature>
+    </config-file>
+
+    <source-file src="src/android/FFMpeg.java" target-dir="src/tv/megacubo/ffmpeg/"/>
+    <!-- mobile ffmpeg framework for android using gradle -->
+    <framework custom="true" src="src/android/mobile-ffmpeg-x2.gradle" type="gradleReference" />
+
+  </platform>
+</plugin>
