@@ -69,16 +69,10 @@ public class FFMpeg extends CordovaPlugin {
                 FFmpegExecution execution = ffmpegExecutions.get(i);
                 Long executionId = execution.getExecutionId();
                 Long startTime = execution.getStartTime().getTime() / 1000;
-                if(keepIds.contains(executionId)){
-                    Log.d(TAG, "Cleanup keeping " + executionId);
-                } else {
+                if(!keepIds.contains(executionId)){
                     long elapsed = now - startTime;
-                    Log.d(TAG, "Cleanup " + executionId + " " + elapsed);
                     if(elapsed > startTimeTolerance){
-                        Log.d(TAG, "Cleanup kill " + executionId);
                         FFmpeg.cancel(executionId);
-                    } else {
-                        Log.d(TAG, "Cleanup keeping " + executionId + " due to low ttl " + elapsed);
                     }
                 }
             }
