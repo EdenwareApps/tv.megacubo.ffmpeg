@@ -45,6 +45,7 @@ public class FFMpeg extends CordovaPlugin {
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
         if (action.equals("exec")) {
 			String cmd = data.getString(0);
+			Log.d(TAG, "COMMAND: " + cmd);
 			long executionId = FFmpeg.executeAsync(cmd, new ExecuteCallback() {
 				@Override
 				public void apply(long executionId, int returnCode) {
