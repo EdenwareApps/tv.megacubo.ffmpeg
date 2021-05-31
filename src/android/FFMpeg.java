@@ -8,22 +8,32 @@ import android.util.Log;
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
+
+/*
 import com.arthenica.mobileffmpeg.Level;
 import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
 import com.arthenica.mobileffmpeg.Statistics;
-import com.arthenica.mobileffmpeg.StatisticsCallback;
-import com.arthenica.mobileffmpeg.ExecuteCallback;
 import com.arthenica.mobileffmpeg.FFmpegExecution;
 import com.arthenica.mobileffmpeg.LogMessage;
+import com.arthenica.mobileffmpeg.StatisticsCallback;
+import com.arthenica.mobileffmpeg.ExecuteCallback;
 import com.arthenica.mobileffmpeg.LogCallback;
 import com.arthenica.mobileffmpeg.MediaInformation;
+*/
 
-import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.FFmpegKitConfig;
+import com.arthenica.ffmpegkit.Session;
+import com.arthenica.ffmpegkit.ReturnCode;
+import com.arthenica.ffmpegkit.Statistics;
+import com.arthenica.ffmpegkit.StatisticsCallback;
+import com.arthenica.ffmpegkit.ExecuteCallback;
+import com.arthenica.ffmpegkit.LogCallback;
 
 import org.apache.cordova.PluginResult;
 
- // ref: https://github.com/tanersener/mobile-ffmpeg/wiki/Android
+ // ref: https://github.com/tanersener/ffmpeg-kit/tree/main/android
 public class FFMpeg extends CordovaPlugin {
 
     private String TAG = "FFMpeg";
@@ -33,12 +43,6 @@ public class FFMpeg extends CordovaPlugin {
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
-		Config.setLogLevel(Level.AV_LOG_INFO); // must be "info" to get codecs data and bitrate
-		Config.enableLogCallback(new LogCallback() {
-			public void apply(LogMessage message) {
-				CollectLogMessages(message);
-			}
-		});
 	}
 	
     @Override
@@ -46,17 +50,19 @@ public class FFMpeg extends CordovaPlugin {
         if (action.equals("exec")) {
 			String cmd = data.getString(0);
 			Log.d(TAG, "COMMAND: " + cmd);
-			long executionId = FFmpeg.executeAsync(cmd, new ExecuteCallback() {
+			Session session = FFmpegKit.executeAsync(cmd, new ExecuteCallback() {
 				@Override
-				public void apply(long executionId, int returnCode) {
-					setTimeout(() -> {                            
+				public void apply(Session session) {
+					Long sessionId = session.getSessionId();
+					ReturnCode returnCode = session.getReturnCode();
+					setTimeout(() -> { // wait some last message to be collected
 						cordova.getActivity().runOnUiThread(new Runnable() {
 							@Override
 							public void run() {
-								String output = "return-" + outputs.get(executionId);
+								String output = "return-" + outputs.get(sessionId);
 								Log.d(TAG, output);
-								outputs.remove(executionId);
-								if (returnCode == RETURN_CODE_SUCCESS){
+								outputs.remove(sessionId);
+								if (ReturnCode.isSuccess(returnCode) || ReturnCode.isCancel(returnCode)){
 									PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, output);
 									pluginResult.setKeepCallback(false);
 									callbackContext.sendPluginResult(pluginResult);
@@ -70,18 +76,38 @@ public class FFMpeg extends CordovaPlugin {
 						});
 					}, 100);
 				}
+			}, new LogCallback() {
+
+				@Override
+				public void apply(com.arthenica.ffmpegkit.Log log) {
+					Long sessionId = log.getSessionId();
+					String messages = outputs.get(sessionId);
+					messages += log.getMessage();
+					int len = messages.length();
+					if(len > outputLogMaxLength){
+						messages = messages.substring(len - outputLogMaxLength);
+					}
+					outputs.put(sessionId, messages);
+				}
+			}, new StatisticsCallback() {
+			
+				@Override
+				public void apply(Statistics statistics) {
+
+				}
 			});
-			outputs.put(executionId, "");
-			PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "start-" + executionId);
+			Long sessionId = session.getSessionId();
+			outputs.put(sessionId, "");
+			PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "start-" + sessionId);
 			pluginResult.setKeepCallback(true);
 			callbackContext.sendPluginResult(pluginResult);
             return true;
         } else if(action.equals("kill")) {
-            long executionId = data.getLong(0);
+            long sessionId = data.getLong(0);
 			cordova.getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					FFmpeg.cancel(executionId);
+					FFmpegKit.cancel(sessionId);
 				}
 			});
             return true;
@@ -97,15 +123,15 @@ public class FFMpeg extends CordovaPlugin {
 				public void run() {
 					long startTimeTolerance = 15;
 					long now = System.currentTimeMillis() / 1000;
-					final List<FFmpegExecution> ffmpegExecutions = FFmpeg.listExecutions();
-					for (int i = 0; i < ffmpegExecutions.size(); i++) {
-						FFmpegExecution execution = ffmpegExecutions.get(i);
-						Long executionId = execution.getExecutionId();
-						Long startTime = execution.getStartTime().getTime() / 1000;
-						if(!keepIds.contains(executionId)){
+					List<Session> sessions = FFmpegKitConfig.getSessions();
+					for (int i = 0; i < sessions.size(); i++) {
+						Session session = sessions.get(i);
+						Long sessionId = session.getSessionId();
+						Long startTime = session.getStartTime().getTime() / 1000;
+						if(!keepIds.contains(sessionId)){
 							long elapsed = now - startTime;
 							if(elapsed > startTimeTolerance){
-								FFmpeg.cancel(executionId);
+								FFmpegKit.cancel(sessionId);
 							}
 						}
 					}
@@ -116,7 +142,7 @@ public class FFMpeg extends CordovaPlugin {
 			cordova.getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					FFmpeg.cancel();
+					FFmpegKit.cancel();
 				}
             });
             return true;
@@ -124,16 +150,6 @@ public class FFMpeg extends CordovaPlugin {
 			return false;
 		}
     }    
-    public void CollectLogMessages(LogMessage logMessage){
-		long eid = logMessage.getExecutionId();
-		String log = outputs.get(eid);
-		log += logMessage.getText();
-		int len = log.length();
-		if(len > outputLogMaxLength){
-			log = log.substring(len - outputLogMaxLength);
-		}
-		outputs.put(eid, log);
-	}
     public static void setTimeout(Runnable runnable, int delay){
         new Thread(() -> {
             try {

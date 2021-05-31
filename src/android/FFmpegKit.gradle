@@ -1,0 +1,7 @@
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.arthenica:ffmpeg-kit-https-gpl:4.4'
+}
