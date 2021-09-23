@@ -3,5 +3,5 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.arthenica:ffmpeg-kit-https-gpl:4.5'
+    implementation 'com.arthenica:ffmpeg-kit-https-gpl:4.5.LTS'
 }
