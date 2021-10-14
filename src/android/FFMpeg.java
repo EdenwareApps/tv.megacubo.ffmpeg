@@ -9,19 +9,6 @@ import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-/*
-import com.arthenica.mobileffmpeg.Level;
-import com.arthenica.mobileffmpeg.Config;
-import com.arthenica.mobileffmpeg.FFmpeg;
-import com.arthenica.mobileffmpeg.Statistics;
-import com.arthenica.mobileffmpeg.FFmpegExecution;
-import com.arthenica.mobileffmpeg.LogMessage;
-import com.arthenica.mobileffmpeg.StatisticsCallback;
-import com.arthenica.mobileffmpeg.ExecuteCallback;
-import com.arthenica.mobileffmpeg.LogCallback;
-import com.arthenica.mobileffmpeg.MediaInformation;
-*/
-
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegKitConfig;
 import com.arthenica.ffmpegkit.Session;
@@ -38,7 +25,8 @@ public class FFMpeg extends CordovaPlugin {
 
     private String TAG = "FFMpeg";
     Map<Long, String> outputs = new HashMap<Long, String>();
-	int outputLogMaxLength = 9999999;
+    Map<Long, Boolean> metadatas = new HashMap<Long, Boolean>();
+	int outputLogMaxLength = 1 * (1024 * 1024);
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -62,6 +50,7 @@ public class FFMpeg extends CordovaPlugin {
 								String output = "return-" + outputs.get(sessionId);
 								Log.d(TAG, output);
 								outputs.remove(sessionId);
+								metadatas.remove(sessionId);
 								if (ReturnCode.isSuccess(returnCode) || ReturnCode.isCancel(returnCode)){
 									PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, output);
 									pluginResult.setKeepCallback(false);
@@ -81,13 +70,21 @@ public class FFMpeg extends CordovaPlugin {
 				@Override
 				public void apply(com.arthenica.ffmpegkit.Log log) {
 					Long sessionId = log.getSessionId();
+					String message = log.getMessage();
 					String messages = outputs.get(sessionId);
-					messages += log.getMessage();
+					messages += message;
 					int len = messages.length();
 					if(len > outputLogMaxLength){
 						messages = messages.substring(len - outputLogMaxLength);
 					}
 					outputs.put(sessionId, messages);
+					if(!metadatas.containsKey(sessionId) && message.indexOf("Stream mapping:") != -1){
+						String output = "metadata-" + messages;
+						metadatas.put(sessionId, true);
+						PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, output);
+						pluginResult.setKeepCallback(true);
+						callbackContext.sendPluginResult(pluginResult);
+					}
 				}
 			}, new StatisticsCallback() {
 			
