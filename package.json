@@ -1,6 +1,6 @@
 {
   "name": "tv.megacubo.ffmpeg",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Cordova FFMPEG plugin with mobile-ffmpeg",
   "cordova": {
     "id": "tv.megacubo.ffmpeg",

@@ -11,11 +11,12 @@ import org.json.JSONException;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegKitConfig;
-import com.arthenica.ffmpegkit.Session;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.arthenica.ffmpegkit.Statistics;
 import com.arthenica.ffmpegkit.StatisticsCallback;
-import com.arthenica.ffmpegkit.ExecuteCallback;
+import com.arthenica.ffmpegkit.Session;
+import com.arthenica.ffmpegkit.FFmpegSession;
+import com.arthenica.ffmpegkit.FFmpegSessionCompleteCallback;
 import com.arthenica.ffmpegkit.LogCallback;
 
 import org.apache.cordova.PluginResult;
@@ -38,9 +39,10 @@ public class FFMpeg extends CordovaPlugin {
         if (action.equals("exec")) {
 			String cmd = data.getString(0);
 			Log.d(TAG, "COMMAND: " + cmd);
-			Session session = FFmpegKit.executeAsync(cmd, new ExecuteCallback() {
+			Session session = FFmpegKit.executeAsync(cmd, new FFmpegSessionCompleteCallback() {
+
 				@Override
-				public void apply(Session session) {
+				public void apply(FFmpegSession session) {
 					Long sessionId = session.getSessionId();
 					ReturnCode returnCode = session.getReturnCode();
 					setTimeout(() -> { // wait some last message to be collected

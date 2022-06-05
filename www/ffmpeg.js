@@ -17,8 +17,11 @@ module.exports = {
   kill: function (executionId) {
     cordova.exec(() => {}, console.error, "FFMpeg", "kill", [executionId]);
   },
-  cleanup: function (executionIdsList) {
-    cordova.exec(() => {}, console.error, "FFMpeg", "cleanup", [executionIdsList]);
+  cleanup: function (executionIdsToKeepList) {
+    if(Array.isArray(executionIdsToKeepList)){
+      executionIdsToKeepList = executionIdsToKeepList.join(',')
+    }
+    cordova.exec(() => {}, console.error, "FFMpeg", "cleanup", [executionIdsToKeepList]);
   },
   exit: function () {
     cordova.exec(() => {}, console.error, "FFMpeg", "exit", []);
