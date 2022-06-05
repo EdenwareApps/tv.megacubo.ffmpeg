@@ -2,6 +2,13 @@
 
 Based on the excellent cordova-plugin-ffmpeg, customized for the Megacubo project.
 
+# Install
+
+```
+cordova plugin add https://github.com/efoxbr/tv.megacubo.ffmpeg.git
+```
+
+
 # Sample usage
 
 ```
