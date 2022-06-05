@@ -8,7 +8,6 @@ Based on the excellent cordova-plugin-ffmpeg, customized for the Megacubo projec
 cordova plugin add https://github.com/efoxbr/tv.megacubo.ffmpeg.git
 ```
 
-
 # Sample usage
 
 ```
