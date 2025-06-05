@@ -1,7 +1,16 @@
+android {
+    ndkVersion "23.1.7779620"
+}
+
 repositories {
+    google()
     mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 dependencies {
-    implementation 'com.arthenica:ffmpeg-kit-https-gpl:6.0-2'
+    implementation 'com.arthenica:smart-exception-java:0.2.1'
+    implementation project(':ffmpeg-kit')
 }
